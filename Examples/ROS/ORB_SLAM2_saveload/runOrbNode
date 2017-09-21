@@ -1,0 +1,5 @@
+rosrun ORB_SLAM2_saveload Mono /home/xuewuyang/programs/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/xuewuyang/programs/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/Asus.yaml
+
+rosrun ORB_SLAM2_saveload Stereo /home/xuewuyang/programs/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/xuewuyang/programs/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/Stereo.yaml false 1
+
+rosrun ORB_SLAM2_saveload RGBD /home/xuewuyang/programs/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/xuewuyang/programs/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/Asus.yaml
