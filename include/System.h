@@ -113,6 +113,9 @@ public:
     // Save mappoint(only the position).
     void SaveMappointPos(const string &filename);
 
+    //get frame pose
+    bool GetFramePose(cv::Mat &Twc, float *q);
+
     // Save camera trajectory in the KITTI dataset format.
     // Only for stereo and RGB-D. This method does not work for monocular.
     // Call first Shutdown()

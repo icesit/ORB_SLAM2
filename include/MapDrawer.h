@@ -45,6 +45,9 @@ public:
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M);
 
+    //xue
+    bool GetCurrentPose(cv::Mat &Rwc, cv::Mat &Twc);
+
 private:
 
     float mKeyFrameSize;

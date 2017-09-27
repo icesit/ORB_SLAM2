@@ -34,6 +34,8 @@
 
 #include"../../../include/System.h"
 
+#include <geometry_msgs/PoseStamped.h>
+
 using namespace std;
 
 class ImageGrabber
@@ -116,9 +118,22 @@ int main(int argc, char **argv)
     sync.registerCallback(boost::bind(&ImageGrabber::GrabStereo,&igb,_1,_2));
 
     ros::Publisher slamPos = nh.advertise<geometry_msgs::PoseStamped>("/slam/pose",10);
+    geometry_msgs::PoseStamped msg;
+    cv::Mat Twc(3,1,CV_32F);
+    float q[4];
     ros::Rate r(20);
     while(ros::ok()){
-
+        if(SLAM.GetFramePose(Twc, q)){
+        msg.header.stamp = ros::Time::now();
+        msg.pose.position.x = Twc.at<float>(0);
+        msg.pose.position.y = Twc.at<float>(1);
+        msg.pose.position.z = Twc.at<float>(2);
+        msg.pose.orientation.x = q[0];
+        msg.pose.orientation.y = q[1];
+        msg.pose.orientation.z = q[2];
+        msg.pose.orientation.w = q[3];
+        slamPos.publish(msg);
+        }
         ros::spinOnce();
         r.sleep();
     }
