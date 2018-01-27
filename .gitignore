@@ -28,4 +28,5 @@ Vocabulary/ORBvoc.bin
 build/
 *~
 lib/
+*.bin
 
