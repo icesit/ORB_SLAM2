@@ -29,7 +29,7 @@ Camera.bf: 37.14
 Camera.RGB: 1
 
 # Close/Far threshold. Baseline times.
-ThDepth: 35
+ThDepth: 100
 
 #--------------------------------------------------------------------------------------------
 # Stereo Rectification. Only if you need to pre-rectify the images.
@@ -86,7 +86,7 @@ RIGHT.P:  !!opencv-matrix
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 1200
+ORBextractor.nFeatures: 1000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
 ORBextractor.scaleFactor: 1.2
@@ -107,7 +107,7 @@ ORBextractor.minThFAST: 7
 Viewer.KeyFrameSize: 0.05
 Viewer.KeyFrameLineWidth: 1
 Viewer.GraphLineWidth: 0.9
-Viewer.PointSize:2
+Viewer.PointSize: 2
 Viewer.CameraSize: 0.08
 Viewer.CameraLineWidth: 3
 Viewer.ViewpointX: 0
@@ -115,4 +115,4 @@ Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -1.8
 Viewer.ViewpointF: 500
 
-Map.mapfile: /home/xuewuyang/programs/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/map.bin
+Map.mapfile: /home/xuewuyang/programs/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/mapsim.bin

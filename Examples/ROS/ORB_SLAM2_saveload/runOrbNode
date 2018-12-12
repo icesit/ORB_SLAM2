@@ -2,7 +2,7 @@ rosrun ORB_SLAM2_saveload Mono /home/xuewuyang/programs/ORB_SLAM2/Vocabulary/ORB
 
 rosrun ORB_SLAM2_saveload Stereo /home/xuewuyang/programs/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/xuewuyang/programs/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/Stereo.yaml false 0 true
 
-#the final param is for visualization
-rosrun ORB_SLAM2_saveload Stereo /home/mediasoc/xue/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/mediasoc/xue/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/sjtu_stereo.yaml true 1 true
+#the final param is for visualization, the final second is for save map or not, final third is for do rectify or not
+rosrun ORB_SLAM2_saveload Stereo /home/mediasoc/xue/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/mediasoc/xue/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/sjtu_stereo.yaml false 0 true
 
-rosrun ORB_SLAM2_saveload RGBD /home/xuewuyang/programs/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/xuewuyang/programs/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/Asus.yaml
+rosrun ORB_SLAM2_saveload RGBD /home/xuewuyang/programs/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/xuewuyang/programs/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/smarttof.yaml true 0 true

@@ -114,10 +114,10 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nh;
 
-    //message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/camera/left/image_raw", 1);
-    //message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "camera/right/image_raw", 1);
-    message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/usb_cam0/image_raw", 1);
-    message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/usb_cam1/image_raw", 1);
+    message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/camera/left/image_raw", 1);
+    message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/camera/right/image_raw", 1);
+    //message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/usb_cam0/image_raw", 1);
+    //message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/usb_cam1/image_raw", 1);
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), left_sub,right_sub);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabStereo,&igb,_1,_2));
@@ -130,12 +130,12 @@ int main(int argc, char **argv)
     while(ros::ok()){
         if(SLAM.GetFramePose(Twc, q)){
         msg.header.stamp = ros::Time::now();
-        msg.pose.position.x = Twc.at<float>(0);
-        msg.pose.position.y = Twc.at<float>(1);
-        msg.pose.position.z = Twc.at<float>(2);
-        msg.pose.orientation.x = q[0];
-        msg.pose.orientation.y = q[1];
-        msg.pose.orientation.z = q[2];
+        msg.pose.position.x = Twc.at<float>(2);//Twc.at<float>(0);
+        msg.pose.position.y = -Twc.at<float>(0);//Twc.at<float>(1);
+        msg.pose.position.z = -Twc.at<float>(1);//Twc.at<float>(2);
+        msg.pose.orientation.x = q[2];//q[0];
+        msg.pose.orientation.y = -q[0];//q[1];
+        msg.pose.orientation.z = -q[1];//q[2];
         msg.pose.orientation.w = q[3];
         slamPos.publish(msg);
         }

@@ -36,7 +36,7 @@ Camera.bf: 65.37732633465257
 Camera.RGB: 0
 
 # Close/Far threshold. Baseline times.
-ThDepth: 0.45
+ThDepth: 4.5
 
 #--------------------------------------------------------------------------------------------
 # Stereo Rectification. Only if you need to pre-rectify the images.
