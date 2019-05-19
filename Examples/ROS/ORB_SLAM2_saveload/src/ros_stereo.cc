@@ -114,8 +114,8 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nh;
 
-    message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/camera/left/image_raw", 1);
-    message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/camera/right/image_raw", 1);
+    message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/sensors/stereo_cam/left/image_rect_color", 1);
+    message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/sensors/stereo_cam/right/image_rect_color", 1);
     //message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/usb_cam0/image_raw", 1);
     //message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/usb_cam1/image_raw", 1);
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
