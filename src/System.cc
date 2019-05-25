@@ -36,7 +36,7 @@ namespace ORB_SLAM2
 {
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
-               const bool bUseViewer, bool is_save_map_):mSensor(sensor), is_save_map(is_save_map_), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false),
+               const bool bUseViewer, bool is_save_map_ ,const string &strSaveMapPath):mSensor(sensor), is_save_map(is_save_map_), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false),
         mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false)
 {
     // Output welcome message
@@ -63,12 +63,15 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
        exit(-1);
     }
 
-    cv::FileNode mapfilen = fsSettings["Map.mapfile"];
     bool bReuseMap = false;
+    /*
+    cv::FileNode mapfilen = fsSettings["Map.mapfile"];
     if (!mapfilen.empty())
     {
         mapfile = (string)mapfilen;
     }
+    */
+    mapfile = strSaveMapPath;
 
     //Load ORB Vocabulary
     cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;

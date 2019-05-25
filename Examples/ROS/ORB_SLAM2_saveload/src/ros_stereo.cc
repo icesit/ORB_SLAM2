@@ -52,21 +52,23 @@ public:
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "RGBD");
+    ros::init(argc, argv, "stereo");
     ros::start();
 
-    if(argc != 6)
+    if(argc != 7)
     {
-        cerr << endl << "Usage: rosrun ORB_SLAM2 Stereo path_to_vocabulary path_to_settings do_rectify save_map" << endl;
+        cerr << endl << "Usage: rosrun ORB_SLAM2 Stereo path_to_vocabulary path_to_settings do_rectify save_map_ornot map_path" << endl;
         ros::shutdown();
         return 1;
     }    
     bool isdisplay;
     stringstream isd(argv[5]);
     isd >> boolalpha >> isdisplay;
+    bool issavemap = (bool)atoi(argv[4]);
+    string save_path = argv[6];
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,isdisplay,(bool)atoi(argv[4]));
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,isdisplay,issavemap, save_path+"map.bin");
 
     ImageGrabber igb(&SLAM);
 
@@ -146,11 +148,14 @@ int main(int argc, char **argv)
     // Stop all threads
     SLAM.Shutdown();
 
+    if(issavemap){
     // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory_TUM_Format.txt");
-    SLAM.SaveMappointPos("MapPointsPos.txt");
-    SLAM.SaveTrajectoryTUM("FrameTrajectory_TUM_Format.txt");
-    SLAM.SaveTrajectoryKITTI("FrameTrajectory_KITTI_Format.txt");
+    //SLAM.SaveKeyFrameTrajectoryTUM(save_path+"KeyFrameTrajectory_TUM_Format.txt");
+    SLAM.SaveKeyFrameTrajectoryTUM(save_path+"Input/trajectory.txt");
+    SLAM.SaveMappointPos(save_path+"Input/MapPointsPos.txt");
+    //SLAM.SaveTrajectoryTUM(save_path+"FrameTrajectory_TUM_Format.txt");
+    //SLAM.SaveTrajectoryKITTI(save_path+"FrameTrajectory_KITTI_Format.txt");
+	}
 
     ros::shutdown();
 
