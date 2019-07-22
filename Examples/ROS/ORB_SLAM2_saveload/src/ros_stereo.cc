@@ -35,6 +35,7 @@
 #include"../../../include/System.h"
 
 #include <geometry_msgs/PoseStamped.h>
+#include "sensor_msgs/CompressedImage.h"
 
 using namespace std;
 
@@ -44,11 +45,35 @@ public:
     ImageGrabber(ORB_SLAM2::System* pSLAM):mpSLAM(pSLAM){}
 
     void GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight);
+    void GrabCompressedStereo(const sensor_msgs::CompressedImageConstPtr& msgLeft,const sensor_msgs::CompressedImageConstPtr& msgRight);
 
     ORB_SLAM2::System* mpSLAM;
     bool do_rectify;
     cv::Mat M1l,M2l,M1r,M2r;
 };
+
+void myspin(ros::NodeHandle &nh, ORB_SLAM2::System &SLAM){
+    ros::Publisher slamPos = nh.advertise<geometry_msgs::PoseStamped>("/slam/pose",10);
+    geometry_msgs::PoseStamped msg;
+    cv::Mat Twc(3,1,CV_32F);
+    float q[4];
+    ros::Rate r(20);
+    while(ros::ok()){
+        if(SLAM.GetFramePose(Twc, q)){
+        msg.header.stamp = ros::Time::now();
+        msg.pose.position.x = Twc.at<float>(2);//Twc.at<float>(0);
+        msg.pose.position.y = -Twc.at<float>(0);//Twc.at<float>(1);
+        msg.pose.position.z = -Twc.at<float>(1);//Twc.at<float>(2);
+        msg.pose.orientation.x = q[2];//q[0];
+        msg.pose.orientation.y = -q[0];//q[1];
+        msg.pose.orientation.z = -q[1];//q[2];
+        msg.pose.orientation.w = q[3];
+        slamPos.publish(msg);
+        }
+        ros::spinOnce();
+        r.sleep();
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -115,7 +140,21 @@ int main(int argc, char **argv)
     }
 
     ros::NodeHandle nh;
+    bool compressimage;
+    nh.param("/orb_slam_node/use_compressed", compressimage, false);
 
+    if(compressimage){
+    message_filters::Subscriber<sensor_msgs::CompressedImage> left_sub(nh, "/sensors/stereo_cam/left/image_rect_color/compressed", 1);
+    message_filters::Subscriber<sensor_msgs::CompressedImage> right_sub(nh, "/sensors/stereo_cam/right/image_rect_color/compressed", 1);
+    //message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/usb_cam0/image_raw", 1);
+    //message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/usb_cam1/image_raw", 1);
+    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, sensor_msgs::CompressedImage> sync_pol;
+    message_filters::Synchronizer<sync_pol> sync(sync_pol(10), left_sub,right_sub);
+    sync.registerCallback(boost::bind(&ImageGrabber::GrabCompressedStereo,&igb,_1,_2));
+    cout<<"compress!!!!!!!!!!"<<endl;
+    myspin(nh, SLAM);
+    }
+    else{
     message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/sensors/stereo_cam/left/image_rect_color", 1);
     message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/sensors/stereo_cam/right/image_rect_color", 1);
     //message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/usb_cam0/image_raw", 1);
@@ -123,26 +162,8 @@ int main(int argc, char **argv)
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), left_sub,right_sub);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabStereo,&igb,_1,_2));
-
-    ros::Publisher slamPos = nh.advertise<geometry_msgs::PoseStamped>("/slam/pose",10);
-    geometry_msgs::PoseStamped msg;
-    cv::Mat Twc(3,1,CV_32F);
-    float q[4];
-    ros::Rate r(20);
-    while(ros::ok()){
-        if(SLAM.GetFramePose(Twc, q)){
-        msg.header.stamp = ros::Time::now();
-        msg.pose.position.x = Twc.at<float>(2);//Twc.at<float>(0);
-        msg.pose.position.y = -Twc.at<float>(0);//Twc.at<float>(1);
-        msg.pose.position.z = -Twc.at<float>(1);//Twc.at<float>(2);
-        msg.pose.orientation.x = q[2];//q[0];
-        msg.pose.orientation.y = -q[0];//q[1];
-        msg.pose.orientation.z = -q[1];//q[2];
-        msg.pose.orientation.w = q[3];
-        slamPos.publish(msg);
-        }
-        ros::spinOnce();
-        r.sleep();
+    cout<<"no compress!!!!!!!!!!"<<endl;
+    myspin(nh, SLAM);
     }
     
     // Stop all threads
@@ -201,4 +222,19 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const se
 
 }
 
-
+void ImageGrabber::GrabCompressedStereo(const sensor_msgs::CompressedImageConstPtr& msgLeft,const sensor_msgs::CompressedImageConstPtr& msgRight)
+{
+    cv::Mat imLeft_input = cv::imdecode(cv::Mat(msgLeft->data),1);
+    cv::Mat imRight_input = cv::imdecode(cv::Mat(msgRight->data),1);
+    if(do_rectify)
+    {
+        cv::Mat imLeft, imRight;
+        cv::remap(imLeft_input,imLeft,M1l,M2l,cv::INTER_LINEAR);
+        cv::remap(imRight_input,imRight,M1r,M2r,cv::INTER_LINEAR);
+        mpSLAM->TrackStereo(imLeft,imRight,msgLeft->header.stamp.toSec());
+    }
+    else
+    {
+        mpSLAM->TrackStereo(imLeft_input,imRight_input,msgLeft->header.stamp.toSec());
+    }
+}

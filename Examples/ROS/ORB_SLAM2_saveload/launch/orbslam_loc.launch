@@ -2,6 +2,7 @@
 <launch>
   <arg name="mapfolder" default="/home/zx/tmps/test/"/>
   <node name="orb_slam_node" pkg="ORB_SLAM2_saveload" type="Stereo" args="$(find ORB_SLAM2_saveload)/../../../Vocabulary/ORBvoc.txt $(find ORB_SLAM2_saveload)/zedstereo.yaml false 0 true $(arg mapfolder)" output="screen">
+    <param name="use_compressed" value="false"/>
   </node>
 </launch>
 
