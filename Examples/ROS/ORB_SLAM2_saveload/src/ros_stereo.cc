@@ -29,6 +29,8 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/TransformStamped.h>
 
 #include<opencv2/core/core.hpp>
 
@@ -36,43 +38,71 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include "sensor_msgs/CompressedImage.h"
-
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 using namespace std;
 
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM2::System* pSLAM):mpSLAM(pSLAM){}
+    ImageGrabber(ORB_SLAM2::System* pSLAM):mpSLAM(pSLAM)
+    , firstpub(true)
+    {
+        slamPos = nh.advertise<geometry_msgs::PoseStamped>("/slam/pose",5);
+        slamPosWithcovar = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/slam/posecov",5);
+    }
 
     void GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight);
     void GrabCompressedStereo(const sensor_msgs::CompressedImageConstPtr& msgLeft,const sensor_msgs::CompressedImageConstPtr& msgRight);
+    void pubpose(ros::Time rost);
 
     ORB_SLAM2::System* mpSLAM;
     bool do_rectify;
     cv::Mat M1l,M2l,M1r,M2r;
+
+    ros::NodeHandle nh;
+    ros::Publisher slamPos, slamPosWithcovar;
+    tf2_ros::TransformBroadcaster br;
+    geometry_msgs::PoseWithCovarianceStamped lastmsg;
+    geometry_msgs::PoseStamped lastmsgnocov;
+    bool firstpub;
 };
 
 void myspin(ros::NodeHandle &nh, ORB_SLAM2::System &SLAM){
-    ros::Publisher slamPos = nh.advertise<geometry_msgs::PoseStamped>("/slam/pose",10);
-    geometry_msgs::PoseStamped msg;
+    // ros::Publisher slamPos = nh.advertise<geometry_msgs::PoseStamped>("/slam/pose",10);
+    /*ros::Publisher slamPos = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/slam/pose",10);
+    geometry_msgs::PoseStamped msg,lastmsg;
+    geometry_msgs::PoseWithCovarianceStamped msgcov,lastmsgcov;
+    bool firstpub=true;
     cv::Mat Twc(3,1,CV_32F);
     float q[4];
     ros::Rate r(20);
     while(ros::ok()){
         if(SLAM.GetFramePose(Twc, q)){
         msg.header.stamp = ros::Time::now();
-        msg.pose.position.x = Twc.at<float>(2);//Twc.at<float>(0);
-        msg.pose.position.y = -Twc.at<float>(0);//Twc.at<float>(1);
-        msg.pose.position.z = -Twc.at<float>(1);//Twc.at<float>(2);
-        msg.pose.orientation.x = q[2];//q[0];
-        msg.pose.orientation.y = -q[0];//q[1];
-        msg.pose.orientation.z = -q[1];//q[2];
-        msg.pose.orientation.w = q[3];
-        slamPos.publish(msg);
+        msg.pose.pose.position.x = Twc.at<float>(2);//Twc.at<float>(0);
+        msg.pose.pose.position.y = -Twc.at<float>(0);//Twc.at<float>(1);
+        msg.pose.pose.position.z = -Twc.at<float>(1);//Twc.at<float>(2);
+        msg.pose.pose.orientation.x = q[2];//q[0];
+        msg.pose.pose.orientation.y = -q[0];//q[1];
+        msg.pose.pose.orientation.z = -q[1];//q[2];
+        msg.pose.pose.orientation.w = q[3];
+        if(firstpub){
+            firstpub = false;
         }
+        else{
+            msg.pose.covariance[0] = abs(msg.pose.pose.position.x - lastmsg.pose.pose.position.x)/100;
+            msg.pose.covariance[7] = abs(msg.pose.pose.position.y - lastmsg.pose.pose.position.y)/100;
+            msg.pose.covariance[14] = abs(msg.pose.pose.position.z - lastmsg.pose.pose.position.z)/100;
+            msg.pose.covariance[21] = 0;
+            msg.pose.covariance[28] = 0;
+            msg.pose.covariance[35] = 0;
+        }
+        slamPos.publish(msg);
+        lastmsg = msg;
         ros::spinOnce();
         r.sleep();
-    }
+        }
+    }*/
 }
 
 int main(int argc, char **argv)
@@ -152,7 +182,8 @@ int main(int argc, char **argv)
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), left_sub,right_sub);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabCompressedStereo,&igb,_1,_2));
     cout<<"compress!!!!!!!!!!"<<endl;
-    myspin(nh, SLAM);
+//    myspin(nh, SLAM);
+    ros::spin();
     }
     else{
     message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/sensors/stereo_cam/left/image_rect_color", 1);
@@ -163,7 +194,8 @@ int main(int argc, char **argv)
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), left_sub,right_sub);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabStereo,&igb,_1,_2));
     cout<<"no compress!!!!!!!!!!"<<endl;
-    myspin(nh, SLAM);
+//    myspin(nh, SLAM);
+    ros::spin();
     }
     
     // Stop all threads
@@ -185,6 +217,7 @@ int main(int argc, char **argv)
 
 void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight)
 {
+    ros::Time rost = msgLeft->header.stamp;//ros::Time::now();
     // Copy the ros image message to cv::Mat.
     cv_bridge::CvImageConstPtr cv_ptrLeft;
     try
@@ -219,11 +252,13 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const se
     {
         mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.toSec());
     }
+    pubpose(rost);
 
 }
 
 void ImageGrabber::GrabCompressedStereo(const sensor_msgs::CompressedImageConstPtr& msgLeft,const sensor_msgs::CompressedImageConstPtr& msgRight)
 {
+    ros::Time rost = msgLeft->header.stamp;//ros::Time::now();
     cv::Mat imLeft_input = cv::imdecode(cv::Mat(msgLeft->data),1);
     cv::Mat imRight_input = cv::imdecode(cv::Mat(msgRight->data),1);
     if(do_rectify)
@@ -236,5 +271,63 @@ void ImageGrabber::GrabCompressedStereo(const sensor_msgs::CompressedImageConstP
     else
     {
         mpSLAM->TrackStereo(imLeft_input,imRight_input,msgLeft->header.stamp.toSec());
+    }
+    pubpose(rost);
+}
+
+void ImageGrabber::pubpose(ros::Time rost){
+    // geometry_msgs::PoseStamped msg;
+    geometry_msgs::PoseWithCovarianceStamped msg;
+    geometry_msgs::PoseStamped msgnocov;
+    geometry_msgs::TransformStamped transformStamped;
+    cv::Mat Twc(3,1,CV_32F);
+    float q[4];
+    if(mpSLAM->GetFramePose(Twc, q)){
+        msg.header.stamp = rost;
+        msg.header.frame_id = "/slam";
+        msg.pose.pose.position.x = Twc.at<float>(2);//Twc.at<float>(0);
+        msg.pose.pose.position.y = -Twc.at<float>(0);//Twc.at<float>(1);
+        msg.pose.pose.position.z = -Twc.at<float>(1);//Twc.at<float>(2);
+        msg.pose.pose.orientation.x = q[2];//q[0];
+        msg.pose.pose.orientation.y = -q[0];//q[1];
+        msg.pose.pose.orientation.z = -q[1];//q[2];
+        msg.pose.pose.orientation.w = q[3];
+
+        msgnocov.header.stamp = rost;
+        msgnocov.header.frame_id = "/slam";
+        msgnocov.pose.position.x = Twc.at<float>(2);//Twc.at<float>(0);
+        msgnocov.pose.position.y = -Twc.at<float>(0);//Twc.at<float>(1);
+        msgnocov.pose.position.z = -Twc.at<float>(1);//Twc.at<float>(2);
+        msgnocov.pose.orientation.x = q[2];//q[0];
+        msgnocov.pose.orientation.y = -q[0];//q[1];
+        msgnocov.pose.orientation.z = -q[1];//q[2];
+        msgnocov.pose.orientation.w = q[3];
+        if(firstpub){
+            firstpub = false;
+        }
+        else{
+            msg.pose.covariance[0] = abs(msg.pose.pose.position.x - lastmsg.pose.pose.position.x)/100;
+            msg.pose.covariance[7] = abs(msg.pose.pose.position.y - lastmsg.pose.pose.position.y)/100;
+            msg.pose.covariance[14] = abs(msg.pose.pose.position.z - lastmsg.pose.pose.position.z)/100;
+            msg.pose.covariance[21] = 0.001;
+            msg.pose.covariance[28] = 0.001;
+            msg.pose.covariance[35] = 0.001;
+        }
+        slamPos.publish(msgnocov);
+        slamPosWithcovar.publish(msg);
+        lastmsg = msg;
+        lastmsgnocov = msgnocov;
+
+        transformStamped.header.stamp = rost;
+        transformStamped.header.frame_id = "/slam";
+        transformStamped.child_frame_id = "/camera";
+        transformStamped.transform.translation.x = msg.pose.pose.position.x;
+        transformStamped.transform.translation.y = msg.pose.pose.position.y;
+        transformStamped.transform.translation.z = msg.pose.pose.position.z;
+        transformStamped.transform.rotation.x = msg.pose.pose.orientation.x;
+        transformStamped.transform.rotation.y = msg.pose.pose.orientation.y;
+        transformStamped.transform.rotation.z = msg.pose.pose.orientation.z;
+        transformStamped.transform.rotation.w = msg.pose.pose.orientation.w;
+        br.sendTransform(transformStamped);
     }
 }
