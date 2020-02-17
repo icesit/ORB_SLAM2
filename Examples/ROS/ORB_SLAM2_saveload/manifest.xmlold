@@ -1,11 +1,12 @@
 <package>
-  <description brief="ORB_SLAM2_saveload">
+  <description brief="orb_slam_saveload">
 
-     ORB_SLAM2_saveload
+     orb_slam_saveload
 
   </description>
   <author>Raul Mur-Artal</author>
   <license>GPLv3</license>
+  <depend package="catkin"/>
   <depend package="roscpp"/>
   <depend package="tf"/>
   <depend package="sensor_msgs"/>

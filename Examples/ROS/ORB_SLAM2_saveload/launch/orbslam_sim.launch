@@ -2,7 +2,7 @@
 <launch>
   <param name="/use_sim_time" value="true" />
   <arg name="mapfolder" default="/home/xuewuyang/tmps/test/"/>
-  <node name="orb_slam_node" pkg="ORB_SLAM2_saveload" type="Stereo" args="/home/xuewuyang/programs/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/xuewuyang/programs/ORB_SLAM2/Examples/ROS/ORB_SLAM2_saveload/Stereo.yaml false 0 true $(arg mapfolder)" output="screen">
+  <node name="orb_slam_node" pkg="orb_slam_saveload" type="Stereo" args="$(find orb_slam_saveload)/../../../Vocabulary/ORBvoc.txt $(find orb_slam_saveload)/Stereo.yaml false 0 true $(arg mapfolder)" output="screen">
     <param name="use_compressed" value="false"/>
     <remap from="sensors/stereo_cam/left/image_rect_color" to="camera/left/image_raw"/>
     <remap from="sensors/stereo_cam/right/image_rect_color" to="camera/right/image_raw"/>
