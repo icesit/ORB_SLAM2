@@ -39,6 +39,9 @@
 #include <geometry_msgs/PoseStamped.h>
 #include "sensor_msgs/CompressedImage.h"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include "std_msgs/Empty.h"
+#include "std_msgs/String.h"
+
 using namespace std;
 
 class ImageGrabber
@@ -49,18 +52,22 @@ public:
     {
         slamPos = nh.advertise<geometry_msgs::PoseStamped>("/slam/pose",5);
         slamPosWithcovar = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/slam/posecov",5);
+        totopo_sub = nh.subscribe("/slam/totopo", 1, &ImageGrabber::totopo, this);
+        savedone_pub = nh.advertise<std_msgs::String>("/slam/savedone",1);
     }
 
     void GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight);
     void GrabCompressedStereo(const sensor_msgs::CompressedImageConstPtr& msgLeft,const sensor_msgs::CompressedImageConstPtr& msgRight);
     void pubpose(ros::Time rost);
+    void totopo(const std_msgs::StringConstPtr& msg);
 
     ORB_SLAM2::System* mpSLAM;
     bool do_rectify;
     cv::Mat M1l,M2l,M1r,M2r;
 
     ros::NodeHandle nh;
-    ros::Publisher slamPos, slamPosWithcovar;
+    ros::Publisher slamPos, slamPosWithcovar, savedone_pub;
+    ros::Subscriber totopo_sub;
     tf2_ros::TransformBroadcaster br;
     geometry_msgs::PoseWithCovarianceStamped lastmsg;
     geometry_msgs::PoseStamped lastmsgnocov;
@@ -330,4 +337,15 @@ void ImageGrabber::pubpose(ros::Time rost){
         transformStamped.transform.rotation.w = msg.pose.pose.orientation.w;
         br.sendTransform(transformStamped);
     }
+}
+
+void ImageGrabber::totopo(const std_msgs::StringConstPtr& msg)
+{
+    string savepath = msg->data;
+    string command = "mkdir -p " + savepath + "Input";
+    system(command.c_str());
+    mpSLAM->SaveKeyFrameTrajectoryTUM(savepath+"Input/trajectory.txt");
+    mpSLAM->SaveMappointPos(savepath+"Input/MapPointsPos.txt");
+    ROS_INFO("[slam]save map points and trajectory done.");
+    savedone_pub.publish(*msg);
 }
