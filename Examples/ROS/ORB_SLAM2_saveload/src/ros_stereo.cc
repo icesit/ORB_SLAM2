@@ -346,6 +346,7 @@ void ImageGrabber::totopo(const std_msgs::StringConstPtr& msg)
     system(command.c_str());
     mpSLAM->SaveKeyFrameTrajectoryTUM(savepath+"Input/trajectory.txt");
     mpSLAM->SaveMappointPos(savepath+"Input/MapPointsPos.txt");
+    mpSLAM->SaveMap(savepath+"map.bin");
     ROS_INFO("[slam]save map points and trajectory done.");
     savedone_pub.publish(*msg);
 }
